@@ -1,4 +1,4 @@
-\c dump
+-- \c dump
 
 CREATE TYPE ci_job_status AS ENUM ('new', 'initializing', 'initialized', 'running', 'success', 'error');
 
@@ -10,7 +10,15 @@ CREATE TABLE ci_jobs(
 );
 
 /*on API call*/
-INSERT INTO ci_jobs(repository, status, status_change_time) VALUES ('https://github.com/colinchartier/layerci-color-test', 'new', NOW());
+INSERT INTO ci_jobs(repository, status, status_change_time) VALUES (
+	'https://github.com/colinchartier/layerci-color-test',
+	'new',
+	NOW()
+), (
+	'https://github.com/BolajiOlajide/postgres-pub-sub',
+	'initializing',
+	NOW()
+);
 
 UPDATE ci_jobs SET status='initializing'
 WHERE id = (
@@ -32,9 +40,27 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION my_own_func()
+  RETURNS trigger AS
+$BODY$
+    BEGIN
+        PERFORM pg_notify('new_stuff', row_to_json(NEW)::text);
+        RETURN NULL;
+    END;
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
+
 
 CREATE TRIGGER ci_jobs_status
 	AFTER INSERT OR UPDATE OF status
 	ON ci_jobs
 	FOR EACH ROW
 EXECUTE PROCEDURE ci_jobs_status_notify();
+
+CREATE TRIGGER ci_jobs_id
+	AFTER INSERT OR UPDATE OF id
+	ON ci_jobs
+	FOR EACH ROW
+EXECUTE PROCEDURE my_own_func();
+
