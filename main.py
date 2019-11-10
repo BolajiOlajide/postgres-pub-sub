@@ -1,9 +1,22 @@
 #!/usr/bin/env python3
 import pgpubsub
 
-pubsub = pgpubsub.connect(user='testuser', database='dump')
+pubsub = pgpubsub.connect(user="testuser", database="dump")
 
-pubsub.listen('ci_jobs_status_channel')
+pubsub.listen("ci_jobs_status_channel")
 
-for e in pubsub.events():
-    print(e.payload)
+try:
+    for e in pubsub.events():
+        message = f"""
+    ---------------------------------------
+    Payload: {e.payload}
+
+    channel: {e.channel}
+
+    PID: {e.pid}
+    ---------------------------------------
+    """
+        print(message)
+except:
+    pubsub.unlisten("channel2")
+    print("I dont want to run deaf. I've stopped listening")
