@@ -1,0 +1,2 @@
+pgpubsub==0.0.5
+psycopg2-binary==2.8.3
